@@ -1,0 +1,48 @@
+//
+//  AdCenet_PrefixHeader.pch
+//  AdCenter
+//
+//  Created by jinhui song on 2017/8/30.
+//  Copyright © 2017年 jinhui song. All rights reserved.
+//
+
+#ifndef AdCenet_PrefixHeader_pch
+#define AdCenet_PrefixHeader_pch
+
+//#ifdef __OBJC__
+
+#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
+
+#import "ADThirdSupport.h"
+#import "Common.h"
+#import "NoticeDef.h"
+#import "Public.h"
+#import "ServiceAddressDef.h"
+#import "GlobalHelper.h"
+
+#import "BaseView.h"
+#import "BaseModel.h"
+#import "BaseViewCell.h"
+#import "BaseViewController.h"
+#import "BaseNavigationController.h"
+
+
+#import <Masonry.h>
+#import "AFNetworking.h"
+#import "MJRefresh.h"
+#import "SVProgressHUD.h"
+#import "AYCheckManager.h"
+#import "UIScrollView+EmptyDataSet.h"
+#import "FMDB.h"
+#import <JSONModel.h>
+#import "MJExtension.h"
+#import <Bugly/Bugly.h>
+#import "AYCheckManager.h"
+#import "UIScrollView+EmptyDataSet.h"
+#import <SDWebImage/UIImageView+WebCache.h>
+#import <AYCheckVersion/AYCheckManager.h>
+#import "UIColor+hexColor.h"
+#import "UIView+Borders.h"
+
+#endif /* AdCenet_PrefixHeader_pch */

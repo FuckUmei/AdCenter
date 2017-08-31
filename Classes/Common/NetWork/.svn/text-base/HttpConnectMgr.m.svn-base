@@ -1,0 +1,395 @@
+//
+//  HttpConnectMgr.m
+//  EMM
+//
+//  Created by xingfengzheng on 15/10/13.
+//  Copyright © 2015年 coralsec. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "HttpConnectMgr.h"
+#import "AppDelegate.h"
+
+#import "HttpTool.h"
+#import "RequestListModel.h"
+
+#define YYEncode(str) [str dataUsingEncoding:NSUTF8StringEncoding]
+
+
+static HttpConnectMgr *m_HttpConnectMgr = nil;
+
+@implementation HttpConnectMgr
+
+@synthesize m_sResult;
+
+
++ (HttpConnectMgr *)shareMgr
+{
+    @synchronized(self)
+    {
+        if(m_HttpConnectMgr == nil)
+        {
+            m_HttpConnectMgr = [[HttpConnectMgr alloc] init];
+//            [m_HttpConnectMgr initNet];
+        }
+    }
+    return m_HttpConnectMgr;
+}
+
+/*
+ 功能：初始化网络
+ */
+-(void) initNet
+{
+    //注册通知
+    [self preLoad];
+    //监听网络状态
+    [self monitorNetState];
+}
+
+/*
+ 功能：事件注册
+ */
+-(void) preLoad
+{
+    //注册登录事件
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:NT_NET_STATECHANGE object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(networkStateChange:) name:NT_NET_STATECHANGE object:nil];
+}
+
+
+/*
+ 功能：网络状态改变的回调
+ */
+- (void) networkStateChange:(NSNotification *)obj
+{
+    NSNumber *nState = [[obj userInfo] objectForKey:@"State"];
+    m_sResult = nState.intValue;
+
+    NSLog(@"网络初始化完成发送通知。。。。token 目前网络状态是：%@",nState);
+    
+    NSArray *requestList = [RequestListModel GetModelListByToken:[GlobalHelper GetObjectFromUDF:USER_TOEKN]];
+    MLog(@" 待请求的请求数 ：%zi ",requestList.count);
+    if ([nState intValue]== 2&&requestList.count>0) {
+        MLog(@"************* WIFI 状态  **************");
+        for (RequestListModel *model in requestList) {
+            
+            [HttpTool RequestDataYHZSNoHuB:model.reqUrl params:model.params success:^(id json) {
+                NSDictionary *dict = json;
+                MLog(@" RequestInToCache 请求：%@ ",json);
+                if ([[dict objectForKey:@"code"] isEqualToString:@"000000"]){
+                    [RequestListModel DeleteModelBy:model.reqId];
+                }
+            } failure:^(NSError *error) {
+                MLog(@" RequestInToCache 请求：%@ ",[error description]);
+            } ReqId:model.reqId];
+           
+        }
+    }else{
+        MLog(@"************* 非 WIFI 状态  **************");
+    }
+    
+}
+
+/*
+ 功能：网络状态监控
+ */
+-(void) monitorNetState
+{
+    // 如果要检测网络状态的变化,必须用检测管理器的单例的startMonitoring
+    AFNetworkReachabilityManager* afNetMgr = [AFNetworkReachabilityManager sharedManager];
+    
+    // 检测网络连接的单例,网络变化时的回调方法
+    [afNetMgr setReachabilityStatusChangeBlock:^(AFNetworkReachabilityStatus status)
+     {
+         switch (status) {
+             case AFNetworkReachabilityStatusUnknown: // 未知
+                 
+                 break;
+             case AFNetworkReachabilityStatusNotReachable: // 无连接
+                 
+                 break;
+             case AFNetworkReachabilityStatusReachableViaWWAN: // 3G 花钱
+                 
+                 break;
+             case AFNetworkReachabilityStatusReachableViaWiFi: // 局域网络,不花钱
+             {
+                 NSDictionary* UserInfo = [NSDictionary dictionaryWithObject: [NSNumber numberWithInt:status] forKey:@"State"];
+                 [[NSNotificationCenter defaultCenter] postNotificationName:NT_NET_STATECHANGE object:nil userInfo:UserInfo];
+             }
+                 break;
+                 
+             default:
+                 break;
+         }
+         
+         
+     }];
+    [afNetMgr startMonitoring];
+}
+
+
+
+/*
+ 功能：向服务器发Url请求，并的到返回结果
+ 参数1: url地址
+ 参数2: 发送给服务器的数据
+ 参数3: 返回成功的回调函数指针
+ 参数4: 失败的回调函数指针
+ */
+- (void)requestUrl:(NSString *)URLString andBody:(NSDictionary *)bodyDict withSuccessBlock:(requestSuccessBlock)successBlock withFailBlock:(requestFailBlock)failBlock
+{
+   // pushAddr = 1 开发环境添加推送     【切记：生产环境要去掉】
+//    NSMutableDictionary *pms=[NSMutableDictionary dictionaryWithDictionary:bodyDict];
+//    [pms setValue:@"1" forKey:@"pushAddr"];
+
+    MLog(@"请求参数：===================== begin ");
+    for (NSString *key in bodyDict.allKeys) {
+        MLog(@" 参数 key: %@ = value: %@",key,bodyDict[key]);
+    }
+     MLog(@"请求参数：===================== end ");
+    
+    //判断网络是否有链接
+    if ([GlobalHelper CurrentHasNetWork]) {
+//    AFNetworkReachabilityStatus AStatu = [self getNetState];
+//    if(AFNetworkReachabilityStatusNotReachable  != AStatu)
+//    {
+        AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+        manager.requestSerializer.timeoutInterval = kHTTP_TIMEOUT_INTERVAL;
+        // 设置请求格式
+        manager.requestSerializer = [AFJSONRequestSerializer serializer];
+        // 设置返回格式
+        manager.responseSerializer = [AFJSONResponseSerializer serializer];
+        
+        //设置响应内容格式  经常因为服务器返回的格式不是标准json而出错 服务器可能返回text/html text/plain 作为jso
+        manager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json", @"text/json", @"text/javascript",@"text/html", @"text/plain",nil];
+        
+        //发送给服务器
+        [manager POST:URLString parameters:bodyDict success:
+         ^(AFHTTPRequestOperation *operation, id responseObject) {
+             MLog(@"result:%@",operation.responseString);
+             
+             NSString * result = [responseObject stringForKey:@"code"];
+             if ([result isEqualToString:@"000000"]) {
+                 successBlock(responseObject);
+             }else if([result isEqualToString:@"000002"]){
+                 // 退出登录
+                 [[NSNotificationCenter defaultCenter] postNotificationName:NT_LogOut object:[responseObject stringForKey:@"code"]];
+                 [SVProgressHUD showErrorWithStatus:[responseObject stringForKey:@"msg"]];
+             }else if([result isEqualToString:@"000003"]){
+                 // 退出登录
+                 [[NSNotificationCenter defaultCenter] postNotificationName:NT_LogOut object:[responseObject stringForKey:@"code"]];
+                 [SVProgressHUD showErrorWithStatus:[responseObject stringForKey:@"msg"]];
+             }else{
+                 [SVProgressHUD dismissWithError:[responseObject stringForKey:@"msg"]];
+//                 failBlock([responseObject objectForKey:@"msg"]);
+             }
+//             successBlock(responseObject);
+             
+             //operation.responseString 为接口返回的未解析原始数据
+             MLog(@"server respones:url :%@ - %@",URLString,operation.responseString);
+         }
+              failure:
+         ^(AFHTTPRequestOperation *operation, NSError *error)
+         {
+             MLog(@"error:%@",operation.responseString);
+             [SVProgressHUD dismiss];
+             failBlock(error);
+         }];
+    }
+    else
+    {
+        
+        //添加无网络连接提示
+        MLog(kmsgShow_NotNet);
+        [SVProgressHUD showWithStr:kmsgShow_NotNet];
+    }
+}
+
+/*
+ 功能：向服务器发Url请求，并的到返回结果
+ 参数1: url地址
+ 参数2: 压缩过的图片
+ 参数3: 返回成功的回调函数指针
+ 参数4: 失败的回调函数指针
+ */
+- (void)requestUrl:(NSString *)URLString andPath:(NSString *)filePath withSuccessBlock:(requestSuccessBlock)successBlock withFailBlock:(requestFailBlock)failBlock;
+{
+    //判断网络是否有链接
+    AFNetworkReachabilityStatus AStatu = [self getNetState];
+    if(AFNetworkReachabilityStatusNotReachable  != AStatu)
+    {
+        //服务器所需参数（根据服务器需要设置）
+//        NSMutableDictionary *params=[NSMutableDictionary dictionary];
+//        [params setObject:@"0" forKey:@"uptype"];         //0-表单上传  1-字节流上传
+//        [params setObject:@"VEJQemdPdDd6ZEdhYWY1" forKey:@"key"];
+        
+        NSData   *fileData = [NSData dataWithContentsOfFile:filePath];  //二进制数据
+        NSString *fileName = [filePath lastPathComponent];              //文件名
+        NSString *mimeType = @"application/octet-stream";                //文件类型
+        
+        AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+        manager.responseSerializer = [AFHTTPResponseSerializer serializer];//这个有时必须设置
+        manager.requestSerializer.timeoutInterval=kHTTP_TIMEOUT_INTERVAL;//请求超时45S
+        [manager POST:URLString parameters:nil constructingBodyWithBlock:^(id<AFMultipartFormData> formData)
+        {
+            [formData appendPartWithFileData:fileData name:@"file" fileName:fileName mimeType:mimeType];
+        } success:^(AFHTTPRequestOperation *operation, id responseObject)
+        {
+            //系统自带JSON解析
+            NSDictionary *resultJsonDic = [NSJSONSerialization JSONObjectWithData:operation.responseData options:NSJSONReadingMutableLeaves error:nil];
+            successBlock(resultJsonDic);
+        } failure:^(AFHTTPRequestOperation *operation, NSError *error)
+         {
+            failBlock(error);
+        }];
+    }
+    else
+    {
+        NSLog(kmsgShow_NotNet);
+    }
+}
+
+/*
+功能：多图片上传
+参数1: url地址
+参数2: 返回的数据结果
+参数3: 压缩的图片
+参数4: 压缩的图片路径
+参数5: 返回成功的回调函数指针
+参数6: 失败的回调函数指针
+*/
+- (void)requestUrl:(NSString *)URLString andFile:(NSDictionary *)bodyDict imagearray:(NSMutableArray *)imgarray imagepath:(NSMutableArray *)patharray withSuccessBlock:(requestSuccessBlock)successBlock withFailBlock:(requestFailBlock)failBlock
+{
+    //判断网络是否有链接
+    AFNetworkReachabilityStatus AStatu = [self getNetState];
+    if(AFNetworkReachabilityStatusNotReachable  != AStatu)
+    {
+        
+        AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+        manager.responseSerializer = [AFHTTPResponseSerializer serializer];
+        //        manager.requestSerializer.timeoutInterval=kHTTP_TIMEOUT_INTERVAL;//请求超时45S
+        [manager POST:URLString parameters:bodyDict constructingBodyWithBlock:^(id<AFMultipartFormData> formData) {
+            
+            for (int i=0; i<[imgarray count]; i++)
+            {
+                UIImage *userImage = [imgarray objectAtIndex:i];
+                NSData *imgData = UIImageJPEGRepresentation(userImage, 0.5);//UIImagePNGRepresentation(userImage);
+                [formData appendPartWithFileData:imgData name:[NSString stringWithFormat:@"file[%d]",i ] fileName:[NSString stringWithFormat:@"%@.jpg",(NSString*)patharray[i]]
+                  mimeType:@"image/jpg"];
+            }
+        } success:^(AFHTTPRequestOperation *operation, id responseObject)
+         {
+             MLog(@" 图片上传 %@",operation.responseString);
+             //系统自带JSON解析
+             NSDictionary *resultJsonDic = [NSJSONSerialization JSONObjectWithData:operation.responseData options:NSJSONReadingMutableLeaves error:nil];
+             successBlock(resultJsonDic);
+         } failure:^(AFHTTPRequestOperation *operation, NSError *error)
+         {
+             failBlock(error);
+         }];
+    }
+    else
+    {
+        NSLog(kmsgShow_NotNet);
+    }
+}
+// 上传多图
+- (void)requestUrlWithImages:(NSString *)URLString andFile:(NSDictionary *)bodyDict imagearray:(NSMutableArray *)imgarray imagepath:(NSMutableArray *)patharray withSuccessBlock:(requestSuccessBlock)successBlock withFailBlock:(requestFailBlock)failBlock
+{
+    //判断网络是否有链接
+    AFNetworkReachabilityStatus AStatu = [self getNetState];
+    if(AFNetworkReachabilityStatusNotReachable  != AStatu)
+    {
+        
+        AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+        manager.responseSerializer = [AFHTTPResponseSerializer serializer];
+        //        manager.requestSerializer.timeoutInterval=kHTTP_TIMEOUT_INTERVAL;//请求超时45S
+        [manager POST:URLString parameters:bodyDict constructingBodyWithBlock:^(id<AFMultipartFormData> formData) {
+            
+            for (int i=0; i<[imgarray count]; i++)
+            {
+                UIImage *userImage = [imgarray objectAtIndex:i];
+                NSData *imgData = UIImageJPEGRepresentation(userImage, 0.5);//UIImagePNGRepresentation(userImage);
+//                [formData appendPartWithFileData:imgData name:(NSString*)patharray[i] fileName:[NSString stringWithFormat:@"%@.jpg",(NSString*)patharray[i]] mimeType:@"image/jpg"];
+                [formData appendPartWithFileData:imgData name:(NSString*)patharray[i] fileName:[NSString stringWithFormat:@"%@.jpg",(NSString*)patharray[i]] mimeType:[self typeForImageData:imgData]];
+            }
+            
+        } success:^(AFHTTPRequestOperation *operation, id responseObject)
+         {
+             MLog(@" 上传图片成功 %@",operation.responseString);
+             //系统自带JSON解析
+             NSDictionary *resultJsonDic = [NSJSONSerialization JSONObjectWithData:operation.responseData options:NSJSONReadingMutableLeaves error:nil];
+             successBlock(resultJsonDic);
+         } failure:^(AFHTTPRequestOperation *operation, NSError *error)
+         {
+             MLog(@" error :%@",operation.responseString);
+             failBlock(error);
+         }];
+    }
+    else
+    {
+        NSLog(kmsgShow_NotNet);
+    }
+}
+
+- (NSString *)typeForImageData:(NSData *)data {
+    uint8_t c;
+    [data getBytes:&c length:1];
+    switch (c) {
+        case 0xFF:
+            return @"image/jpeg";
+        case 0x89:
+            return @"image/png";
+        case 0x47:
+            return @"image/gif";
+        case 0x49:
+        case 0x4D:
+            return @"image/tiff";
+    }
+    return nil;
+}
+
+/*
+ 功能：向服务器发Url请求，并的到返回结果
+ 参数1: url地址
+ 参数2: 返回的数据结果
+ 参数3: 返回成功的回调函数指针
+ 参数4: 失败的回调函数指针
+ */
+- (void)requestUrl:(NSString *)URLString andBody:(NSDictionary *)bodyDict withSuccessFun:(requestSuccessFun)successFun withFailFun:(requestFailFun)failFun
+{
+    //判断网络是否有链接
+    AFNetworkReachabilityStatus AStatu = [self getNetState];
+    if(AFNetworkReachabilityStatusNotReachable  < AStatu)
+    {
+        AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+        
+        // 设置请求格式
+        manager.requestSerializer = [AFJSONRequestSerializer serializer];
+        // 设置返回格式
+        manager.responseSerializer = [AFJSONResponseSerializer serializer];
+        
+        //发送给服务器
+        [manager POST:URLString parameters:bodyDict success:
+         ^(AFHTTPRequestOperation *operation, id responseObject) {
+             successFun(responseObject);
+             
+             //operation.responseString 为接口返回的未解析原始数据
+             NSLog(@"server respones:%@",operation.responseString);
+         }
+              failure:
+         ^(AFHTTPRequestOperation *operation, NSError *error)
+         {
+             failFun(error);
+         }];
+    }
+}
+
+- (AFNetworkReachabilityStatus)getNetState
+{
+    return m_sResult;
+}
+
+
+@end

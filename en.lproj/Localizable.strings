@@ -1,0 +1,12 @@
+/* 
+  Localizable.strings
+  AdCenter
+
+  Created by jinhui song on 2017/8/31.
+  Copyright © 2017年 jinhui song. All rights reserved.
+*/
+
+/************   tab title  ************/
+"tab_home_title" = "Home";
+"tab_center_title" = "Center";
+"tab_setting_title" = "Setting";

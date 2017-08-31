@@ -1,0 +1,96 @@
+//
+//  HttpConnectMgr.h
+//  EMM
+//
+//  Created by xingfengzheng on 15/10/13.
+//  Copyright © 2015年 coralsec. All rights reserved.
+//
+
+#ifndef HttpConnectMgr_h
+#define HttpConnectMgr_h
+#import "AFNetworking.h"
+
+//成功和失败的函数指针定义
+typedef void (^requestSuccessBlock)(NSDictionary  *dict);
+typedef void (^requestFailBlock)(NSError *error);
+
+//定义成功失败的函数指针
+typedef void (*requestSuccessFun)(NSDictionary  *dict);
+typedef void (*requestFailFun)(NSError *error);
+
+
+@interface HttpConnectMgr : NSObject
+
+//成员变量
+@property AFNetworkReachabilityStatus m_sResult;
+
++ (HttpConnectMgr *)shareMgr;
+
+/*
+功能：初始化网络
+*/
+-(void) initNet;
+
+/*
+ 功能：向服务器发Url请求，并的到返回结果
+ 参数1: url地址
+ 参数2: 返回的数据结果
+ 参数3: 返回成功的回调函数指针
+ 参数4: 失败的回调函数指针
+ */
+- (void)requestUrl:(NSString *)URLString andBody:(NSDictionary *)bodyDict withSuccessBlock:(requestSuccessBlock)successBlock withFailBlock:(requestFailBlock)failBlock;
+
+/*
+ 功能：向服务器发Url请求，并的到返回结果
+ 参数1: url地址
+ 参数2: 返回的数据结果
+ 参数3: 返回成功的回调函数指针
+ 参数4: 失败的回调函数指针
+ */
+- (void)requestUrl:(NSString *)URLString andBody:(NSDictionary *)bodyDict withSuccessFun:(requestSuccessFun)successFun withFailFun:(requestFailFun)failFun;
+
+/*
+ 功能：单图片上传
+ 参数1: url地址
+ 参数2: 压缩的图片
+ 参数3: 返回成功的回调函数指针
+ 参数4: 失败的回调函数指针
+ */
+- (void)requestUrl:(NSString *)URLString andPath:(NSString *)filePath withSuccessBlock:(requestSuccessBlock)successBlock withFailBlock:(requestFailBlock)failBlock;
+
+/*
+ 功能：多图片上传
+ 参数1: url地址
+ 参数2: 返回的数据结果
+ 参数3: 压缩的图片
+ 参数4: 压缩的图片路径
+ 参数5: 返回成功的回调函数指针
+ 参数6: 失败的回调函数指针
+ */
+- (void)requestUrl:(NSString *)URLString andFile:(NSDictionary *)bodyDict imagearray:(NSMutableArray *)imgarray imagepath:(NSMutableArray *)patharray withSuccessBlock:(requestSuccessBlock)successBlock withFailBlock:(requestFailBlock)failBlock;
+
+/*
+ 功能：获取网络状态
+ 返回值：AFNetworkReachabilityStatusUnknown          = -1,  // 未知
+        AFNetworkReachabilityStatusNotReachable     = 0,   // 无连接
+        AFNetworkReachabilityStatusReachableViaWWAN = 1,   // 3G 花钱
+        AFNetworkReachabilityStatusReachableViaWiFi = 2,   // 局域网络,不花钱
+ */
+- (AFNetworkReachabilityStatus)getNetState;
+
+/*
+ 功能：网络状态改变的回调
+ */
+- (void) networkStateChange:(NSNotification *)obj;
+
+/*
+功能：网络状态监控
+*/
+-(void) monitorNetState;
+
+
+// 上传多图
+- (void)requestUrlWithImages:(NSString *)URLString andFile:(NSDictionary *)bodyDict imagearray:(NSMutableArray *)imgarray imagepath:(NSMutableArray *)patharray withSuccessBlock:(requestSuccessBlock)successBlock withFailBlock:(requestFailBlock)failBlock;
+
+@end
+#endif /* HttpConnectMgr_h */
