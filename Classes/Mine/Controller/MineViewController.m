@@ -7,12 +7,14 @@
 //
 
 #import "MineViewController.h"
+#import "HeadCell.h"
+#import "RxWebViewController.h"
 
 @interface MineViewController ()<UITableViewDataSource,UITableViewDelegate>
 
 @property (nonatomic,strong) UITableView *tableView;
 @property (nonatomic,strong) NSDictionary *userDict;
-@property (nonatomic,strong) UIImageView *headImg;
+@property (nonatomic,strong) NSMutableArray *models;
 
 @end
 
@@ -21,7 +23,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor whiteColor];
-    [self.navigationItem setTitle:@"个人"];
+    [self.navigationItem setTitle:NSLocalizedString(@"tab_mine_title", nil)];
     self.edgesForExtendedLayout = UIRectEdgeNone;
     
     [self getAccountInfo];
@@ -37,8 +39,7 @@
     if (obj) {
         NSString *imgUrl = [obj object];
         MLog(@"%@",imgUrl);
-        [_headImg sd_setImageWithURL:[NSURL URLWithString:imgUrl] placeholderImage:[UIImage imageNamed:@"UserHeader"]];
-        //        [_tableView reloadData];
+        [_tableView reloadData];
     }
 }
 
@@ -91,55 +92,22 @@
     
     if (indexPath.section == 0)
     {
-        CGFloat padding = 10;
-        
         switch (indexPath.row)
         {
             case 0:
             {
-                // 头像
-                _headImg = [[UIImageView alloc]init];
-                _headImg.contentMode = UIViewContentModeScaleAspectFill;
-                _headImg.clipsToBounds = YES;
-                [cell.contentView addSubview:_headImg];
-                
-                NSString *img = [_userDict objectForKey:@"headimg"];
-                [_headImg sd_setImageWithURL:[NSURL URLWithString:img] placeholderImage:[UIImage imageNamed:@"UserHeader"]];
-                _headImg.frame = CGRectMake(SCALEWIDTH(15), SCALEWIDTH(10), SCALEWIDTH(60), SCALEWIDTH(60));
-                _headImg.layer.cornerRadius = _headImg.width/2;
-                MLog(@"[%@,%@]",_headImg,NSStringFromCGRect(_headImg.frame));
-                
-                //label name
-                
-                NSString *name = [GlobalHelper getValueByUserDefault:USER_NAME];
-                UILabel *nameLabel = [[UILabel alloc]init];
-                nameLabel.textColor = kCellTitleColor;
-                nameLabel.font = [UIFont systemFontOfSize:18.0f];
-                nameLabel.frame = CGRectMake(CGRectGetMaxX(_headImg.frame)+padding, SCALEWIDTH(15), SCALEWIDTH(180), SCALEWIDTH(28));
-                nameLabel.backgroundColor = kClearColor;
-                nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
-                nameLabel.text= name;
-                [cell.contentView addSubview:nameLabel];
-                
-                //label phone
-                UILabel *phoneLabel = [[UILabel alloc]init];
-                phoneLabel.textColor = [UIColor hexFloatColor:@"aeaeae"];
-                phoneLabel.font = [UIFont systemFontOfSize:14.0f];
-                phoneLabel.frame = CGRectMake(CGRectGetMaxX(_headImg.frame)+padding, CGRectGetMaxY(nameLabel.frame)+padding/3, SCALEWIDTH(280), SCALEWIDTH(18));
-                phoneLabel.backgroundColor = kClearColor;
-                phoneLabel.lineBreakMode = NSLineBreakByTruncatingTail;
-                phoneLabel.text= [_userDict objectForKey:@"phone"];//[GlobalHelper GetObjectFromUDF:USER_PHONE];//[[FileManager sharedInstance]getUserDefault:USER_PHONE];
-                [cell.contentView addSubview:phoneLabel];
+                HeadCell *hCell = [HeadCell cellWithTableView:tableView withReuseId:@"HeadCell"];
+                return hCell;
             }break;
                 
             case 1:
             {
-                [cell.textLabel setText:@"我的企业"];
+                [cell.textLabel setText:NSLocalizedString(@"cell_mine_mycompany", nil)];
                 NSString *companyName = _userDict[@"companyName"];
                 if (companyName) {
                     [cell.detailTextLabel setText:companyName];
                 }else {
-                    [cell.detailTextLabel setText:@"未设置"];
+                    [cell.detailTextLabel setText:NSLocalizedString(@"common_none", nil)];
                 }
             }break;
                 
@@ -151,18 +119,18 @@
     {
         if (indexPath.row==0)
         {
-            [cell.textLabel setText:@"分享应用"];
+            [cell.textLabel setText:NSLocalizedString(@"cell_mine_share", nil)];
             [cell.imageView setImage:[UIImage imageNamed:@"shared_icon"]];
         }
         else
         {
-            [cell.textLabel setText:@"设置"];
+            [cell.textLabel setText:NSLocalizedString(@"cell_mine_setting", nil)];
             [cell.imageView setImage:[UIImage imageNamed:@"setting_icon"]];
         }
     }
     else if (indexPath.section == 2)
     {
-        [cell.textLabel setText:@"企业管理"];
+        [cell.textLabel setText:NSLocalizedString(@"cell_mine_business_management", nil)];
         [cell.imageView setImage:[UIImage imageNamed:@"company"]];
     }
     return cell;

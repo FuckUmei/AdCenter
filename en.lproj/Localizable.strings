@@ -6,7 +6,17 @@
   Copyright © 2017年 jinhui song. All rights reserved.
 */
 
-/************   tab title  ************/
+/************   主页tab title  ************/
 "tab_home_title" = "Home";
 "tab_center_title" = "Center";
-"tab_setting_title" = "Setting";
+"tab_mine_title" = "Mine";
+
+/************   个人设置  *****************/
+"cell_mine_mycompany" = "MyCompany";
+"cell_mine_share" = "Share";
+"cell_mine_setting" = "Setting";
+"cell_mine_business_management" = "Business Management";
+/************   通用  *****************/
+"common_none" = "None";
+"common_close" = "Close";
+"common_return" = "Return";

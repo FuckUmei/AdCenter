@@ -144,6 +144,7 @@
 #define CHINESE_FONT_NAME  @"Heiti SC"
 #define CHINESE_SYSTEM(x) [UIFont fontWithName:CHINESE_FONT_NAME size:x]
 #define AdaptedFontSize(R)     CHINESE_SYSTEM(AdaptedWidth(R))
+#define ButtonTitleFont [UIFont systemFontOfSize:16]
 
 //=========================【app 弹窗】========================================
 #define ALERT_MSG(msg,btnMsg) static UIAlertView *alert; alert = [[UIAlertView alloc] initWithTitle:nil message:msg delegate:self cancelButtonTitle:btnMsg otherButtonTitles:nil, nil];\

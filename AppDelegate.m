@@ -51,11 +51,11 @@
 //    [Public configureUmengKey];
     
     //注册JPush （极光推送）
-    [CoreJPush registerJPush:launchOptions];
+//    [CoreJPush registerJPush:launchOptions];
     // 自定义消息  < 有推送，不监听自定义消息了 >
     //    NSNotificationCenter *defaultCenter = [NSNotificationCenter defaultCenter];
     //    [defaultCenter addObserver:self selector:@selector(networkDidReceiveMessage:) name:kJPFNetworkDidReceiveMessageNotification object:nil];
-    [CoreJPush addJPushListener:self];
+//    [CoreJPush addJPushListener:self];
     
     //动态启动图
     

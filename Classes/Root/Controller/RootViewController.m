@@ -11,7 +11,8 @@
 #import "CenterViewController.h"
 #import "MineViewController.h"
 #import "BaseNavigationController.h"
-#include "AdWebViewController.h"
+#import "RxWebViewController.h"
+#import "AdWebViewController.h"
 
 @interface RootViewController ()
 
@@ -32,9 +33,9 @@
     if (_tabBarController == nil)
     {
 //        HomeViewController *home = [[HomeViewController alloc]init];
-//        UIViewController *homeNav = [[BaseNavigationController alloc]
+//        UIViewController *webHomeNav = [[BaseNavigationController alloc]
 //                                     initWithRootViewController:home];
-//        
+//
 //        CenterViewController *center = [[CenterViewController alloc]init];
 //        UIViewController *centerNav = [[BaseNavigationController alloc]
 //                                     initWithRootViewController:center];
@@ -44,10 +45,10 @@
         UIViewController *webHomeNav = [[BaseNavigationController alloc]
                                         initWithRootViewController:webHome];
         
-        NSString* urlStr2 = @"www.sina.com.cn";
+        NSString* urlStr2 = @"www.baidu.com";
         AdWebViewController* webCenter = [AdWebViewController webViewControllerWithUrl:urlStr2];
         UIViewController *webCenterNav = [[BaseNavigationController alloc]
-                                       initWithRootViewController:webCenter];
+                                          initWithRootViewController:webCenter];
         
         MineViewController *mine = [[MineViewController alloc]init];
         UIViewController *mineNav = [[BaseNavigationController alloc]
@@ -73,18 +74,19 @@
 
 - (void)setUpTabBarItemsAttributesForController:(CYLTabBarController *)tabBarController {
     
+    
     NSDictionary *dict1 = @{
-                            CYLTabBarItemTitle : @"首页",
+                            CYLTabBarItemTitle : NSLocalizedString(@"tab_home_title", nil),
                             CYLTabBarItemImage : @"tab_home_nor",
                             CYLTabBarItemSelectedImage : @"tab_home_hl",
                             };
     NSDictionary *dict2 = @{
-                            CYLTabBarItemTitle : @"平台",
+                            CYLTabBarItemTitle : NSLocalizedString(@"tab_center_title", nil),
                             CYLTabBarItemImage : @"tab_gm_nor",
                             CYLTabBarItemSelectedImage : @"tab_gm_hl",
                             };
     NSDictionary *dict3 = @{
-                            CYLTabBarItemTitle : @"个人",
+                            CYLTabBarItemTitle : NSLocalizedString(@"tab_mine_title", nil),
                             CYLTabBarItemImage : @"tab_me_nor",
                             CYLTabBarItemSelectedImage : @"tab_me_hl",
                             };

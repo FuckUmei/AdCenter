@@ -11,9 +11,16 @@
 #import "NJKWebViewProgressView.h"
 #import <JavaScriptCore/JavaScriptCore.h>
 #import "AdWebVCLeftItemView.h"
+#import <WebKit/WebKit.h>
 
 @interface AdWebViewController ()<UIWebViewDelegate, NJKWebViewProgressDelegate>
+
 @property (nonatomic, strong) UIWebView *webView;
+
+//@property (nonatomic, strong) WKWebView *wkWebView;
+
+@property (nonatomic)UIBarButtonItem* closeButtonItem;
+
 @end
 
 @implementation AdWebViewController
@@ -29,7 +36,8 @@
 + (instancetype)webViewControllerWithUrl:(NSString *)url
 {
     AdWebViewController *webVC = [[AdWebViewController alloc] init];
-    if (![url hasPrefix:@"http"] && ![url hasPrefix:@"https://"]) {
+    if (![url hasPrefix:@"http"] && ![url hasPrefix:@"https://"])
+    {
         url = [@"https://" stringByAppendingString:url];
     }
     NSURL * requestUrl = [NSURL URLWithString:url];
@@ -54,6 +62,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
     [self.view addSubview:self.webView];
     
     _progressProxy = [[NJKWebViewProgress alloc] init];
@@ -75,7 +84,7 @@
     [self setupRefresh];
 }
 
-// 添加下拉刷新
+#pragma mark - 添加下拉刷新
 - (void)setupRefresh
 {
     control=[[UIRefreshControl alloc]init];
@@ -104,9 +113,10 @@
     titleLabel.textColor = kWedTitleColor;  //设置文本颜色
     titleLabel.textAlignment = NSTextAlignmentCenter;
     titleLabel.text = [self.webView stringByEvaluatingJavaScriptFromString:@"document.title"];  //设置标题
-    self.navigationItem.titleView = titleLabel;
+//    self.navigationItem.titleView = titleLabel;
+    
     //处理navbar
-//    [self handleNavBarWithWebView:webView];
+    [self handleNavBarWithWebView:webView];
     
     //js调oc
 //    JSContext *context = [self.webView valueForKeyPath:@"documentView.webView.mainFrame.javaScriptContext"];
@@ -125,12 +135,19 @@
 //    };
 }
 
+#pragma mark - 处理navbar
 //处理navbar
-- (void)handleNavBarWithWebView:(UIWebView *)webView {
-    if ([webView canGoBack]) {
+- (void)handleNavBarWithWebView:(UIWebView *)webView
+{
+    if ([webView canGoBack])
+    {
         WEAK(self);
-        RNTWebVCLeftItemView *leftItem = [RNTWebVCLeftItemView WebVCLeftItemViewWithGobackBtnBlock:^{
+        AdWebVCLeftItemView *leftItem = [AdWebVCLeftItemView WebVCLeftItemViewWithGobackBtnBlock:^{
             [webView goBack];
+            if (self. navigationController.viewControllers.count == 1)
+            {
+                self.navigationItem.leftBarButtonItems = nil;
+            }
         } closeBtnBlock:^{
             [weakself back];
         }];
@@ -139,19 +156,22 @@
         UIBarButtonItem *buttonItem = [[UIBarButtonItem alloc] initWithCustomView:leftItem];
         UIBarButtonItem *negativeSpacer = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemFixedSpace target:nil action:nil];
         negativeSpacer.width = -10;
+        [self.navigationItem setHidesBackButton:NO];
         self.navigationItem.leftBarButtonItems = @[negativeSpacer, buttonItem];
-    } else {
-        UIButton* backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-        [backBtn setImage:[UIImage imageNamed:@"nav_back"] forState:UIControlStateNormal];
-        [backBtn setBackgroundImage:[UIImage imageNamed:@"navigation_back_BG"] forState:UIControlStateHighlighted];
-        backBtn.frame = CGRectMake(0, 0, 30, 30);
-        [backBtn addTarget:self action:@selector(back) forControlEvents:UIControlEventTouchUpInside];
-        
-        //偏移问题 (处理左边间隙太大)
-        UIBarButtonItem *buttonItem = [[UIBarButtonItem alloc] initWithCustomView:backBtn];
-        UIBarButtonItem *negativeSpacer = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemFixedSpace target:nil action:nil];
-        negativeSpacer.width = -10;
-        self.navigationItem.leftBarButtonItems = @[negativeSpacer, buttonItem];
+    }
+    else
+    {
+//        UIButton* backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+//        [backBtn setImage:[UIImage imageNamed:@"nav_back"] forState:UIControlStateNormal];
+//        [backBtn setBackgroundImage:[UIImage imageNamed:@"navigation_back_BG"] forState:UIControlStateHighlighted];
+//        backBtn.frame = CGRectMake(0, 0, 30, 30);
+//        [backBtn addTarget:self action:@selector(back) forControlEvents:UIControlEventTouchUpInside];
+//        
+//        //偏移问题 (处理左边间隙太大)
+//        UIBarButtonItem *buttonItem = [[UIBarButtonItem alloc] initWithCustomView:backBtn];
+//        UIBarButtonItem *negativeSpacer = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemFixedSpace target:nil action:nil];
+//        negativeSpacer.width = -10;
+//        self.navigationItem.leftBarButtonItems = @[negativeSpacer, buttonItem];
     }
 }
 
@@ -185,7 +205,10 @@
 {
     NSLog(@"Did start loading: %@ auth:%d", [[request URL] absoluteString], _authenticated);
     
-    if (!_authenticated) {
+//    [self updateNavigationItems];
+    
+    if (!_authenticated)
+    {
         _authenticated = NO;
         
         _Request = request;

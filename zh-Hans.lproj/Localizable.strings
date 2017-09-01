@@ -8,4 +8,13 @@
 /************   tab title  ************/
 "tab_home_title" = "首页";
 "tab_center_title" = "平台";
-"tab_setting_title" = "设置";
+"tab_mine_title" = "个人";
+/************   个人设置  *****************/
+"cell_mine_mycompany" = "我的企业";
+"cell_mine_share" = "分享应用";
+"cell_mine_setting" = "设置";
+"cell_mine_business_management" = "企业管理";
+/************   通用  *****************/
+"common_none" = "未设置";
+"common_close" = "关闭";
+"common_return" = "返回";
